@@ -575,6 +575,8 @@ class Popen(object):
       start_new_session (POSIX only)
 
       pass_fds (POSIX only)
+      
+      hide_console (Windows only)
 
       encoding and errors: Text mode encoding and error handling to use for
           file objects stdin, stdout and stderr.
@@ -590,7 +592,8 @@ class Popen(object):
                  shell=False, cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
-                 pass_fds=(), *, encoding=None, errors=None):
+                 pass_fds=(), *, encoding=None, errors=None,
+                 hide_console=False):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -705,7 +708,8 @@ class Popen(object):
                                 p2cread, p2cwrite,
                                 c2pread, c2pwrite,
                                 errread, errwrite,
-                                restore_signals, start_new_session)
+                                restore_signals, start_new_session,
+                                hide_console)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -961,7 +965,8 @@ class Popen(object):
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
                            errread, errwrite,
-                           unused_restore_signals, unused_start_new_session):
+                           unused_restore_signals, unused_start_new_session, 
+                           hide_console):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
@@ -978,9 +983,10 @@ class Popen(object):
                 startupinfo.hStdOutput = c2pwrite
                 startupinfo.hStdError = errwrite
 
-            if shell:
+            if shell or hide_console:
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
+            if shell:
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
@@ -1204,7 +1210,7 @@ class Popen(object):
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
                            errread, errwrite,
-                           restore_signals, start_new_session):
+                           restore_signals, start_new_session, hide_console):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
